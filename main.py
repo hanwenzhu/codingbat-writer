@@ -271,9 +271,10 @@ if __name__ == '__main__':
             yhat = yhat.round()
         elif writer.model_type == 'multiclass':
             yhat = np.array([writer.index[p] for p in np.argmax(yhat, axis=1)])
+        y_vs_yhat = np.hstack((y.reshape((-1, 1)), yhat.reshape(-1, 1)))
         print(f'X: {writer.X}')
         print(f'Xn: {writer.Xn}')
-        print(f'y vs yhat: {np.hstack((y.T, yhat.T))}')
+        print(f'y vs yhat: {y_vs_yhat}')
         print(f'Scores: {writer.model.evaluate(writer.Xn, writer.y)}')
 
         writer.write()

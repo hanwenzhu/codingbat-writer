@@ -119,11 +119,8 @@ def load_model(input_shape, model_type, num_classes=None):
 def binary_model(input_shape):
     model = tf.keras.models.Sequential()
     model.add(Dense(6, input_shape=input_shape))
-    model.add(Dropout(0.3))
     model.add(Dense(10, activation='relu'))
-    model.add(Dropout(0.3))
     model.add(Dense(6))
-    model.add(Dropout(0.3))
 
     model.add(Dense(1, activation='sigmoid'))
 
