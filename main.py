@@ -63,15 +63,16 @@ class CodingBatWriter:
         self.loaded = True
 
     def train(self, normalize=True, epochs=500, batch_size=1,
-              save_best_only=False):
-        model_checkpoint = tf.keras.callbacks.ModelCheckpoint(
-            'model.h5',
-            monitor='loss',
-            save_best_only=save_best_only)
-
+              use_best=True):
         if not self.loaded:
             warnings.warn('Use ``load`` to load first!')
             return
+
+        callbacks = []
+        if use_best:
+            callbacks.append(tf.keras.callbacks.ModelCheckpoint(
+                'model.h5', monitor='loss', save_best_only=True))
+
         self.normalize = normalize
         self.Xn, self.mean, self.std = alchemy.normalize(self.X,
                                                          return_mean=True,
@@ -80,12 +81,15 @@ class CodingBatWriter:
             self.model.fit(self.Xn, self.y,
                            epochs=epochs,
                            batch_size=batch_size,
-                           callbacks=[model_checkpoint])
+                           callbacks=callbacks)
         else:
             self.model.fit(self.X, self.y,
                            epochs=epochs,
                            batch_size=batch_size,
-                           callbacks=[model_checkpoint])
+                           callbacks=callbacks)
+
+        if use_best:
+            self.model = tf.keras.models.load_model('model.h5')
 
         self.trained = True
 
@@ -259,18 +263,21 @@ if __name__ == '__main__':
         raise OSError(f'Usage: `python3 {__file__} [<url>]`.')
     with CodingBatWriter(URL) as writer:
         writer.load()
-        writer.train(normalize=True)
+        writer.train(normalize=True, use_best=True)
 
-        y = writer.y.ravel()
+        y = writer.y
         if writer.model_type == 'binary':
             y = y.round()
         elif writer.model_type == 'multiclass':
             y = np.array([writer.index[p] for p in np.argmax(y, axis=1)])
-        yhat = writer.model.predict(writer.Xn).ravel()
+        yhat = writer.model.predict(writer.Xn)
         if writer.model_type == 'binary':
             yhat = yhat.round()
         elif writer.model_type == 'multiclass':
             yhat = np.array([writer.index[p] for p in np.argmax(yhat, axis=1)])
+        y = y.ravel()
+        yhat = yhat.ravel()
+
         y_vs_yhat = np.hstack((y.reshape((-1, 1)), yhat.reshape(-1, 1)))
         print(f'X: {writer.X}')
         print(f'Xn: {writer.Xn}')
